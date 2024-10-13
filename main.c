@@ -108,7 +108,7 @@ void HandleCmd(void) {
 	char cwd[PATH_MAX];
 
 	while (status) {
-		printf("%s > ", getcwd(cwd, sizeof(cwd)));
+		printf("\033[1;36m%s\033[0m > ", getcwd(cwd, sizeof(cwd)));
 
 		line = ReadLine();
 
@@ -135,6 +135,7 @@ int main(int argc, char **argv) {
 	}
 	
 	signal(SIGHUP, CatchSighup);
+	signal(SIGINT, CatchSigint);
 	HandleCmd();
 
 	return 0;

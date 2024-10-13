@@ -102,6 +102,11 @@ void CatchSighup() {
 	printf("Configuration reloaded!");
 }
 
+void CatchSigint() {
+	printf("\nTERMINATING %s\n", SHELL_NAME);
+	exit(1);
+}
+
 int (*defFuncs[]) (char**) = {
 	&CmdHelp,
 	&CmdExit,
