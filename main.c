@@ -21,16 +21,12 @@ void AllocCheck(char* buffer) {
 	}
 }
 
-char* CheckDir() {
-	char dirname[PATH_MAX];
-	
+/*void CheckDir(char* dirname) {
 	if (getcwd(dirname, sizeof(dirname)) == nullptr) {
 		perror(SHELL_NAME);
-		return "?";
+		dirname = "?";
 	}
-
-	return dirname;
-}
+}*/
 
 char* ReadLine(void) {
 	char* line = nullptr;
@@ -100,7 +96,28 @@ int Execute(char** args) {
 	return LinkProcess(args);
 }
 
-void HandleCmd(void) {
+void LineLog(char* line, char** history, int *hbuffsize, int *hindex) {
+	history[*hindex] = line;
+	//printf("%s", history[*hindex]);
+	*hindex = *hindex + 1;
+
+	if (*hindex >= *hbuffsize) {
+		*hbuffsize += CMDHIS_BUFFSIZE;
+		history = realloc(history, *hbuffsize * sizeof(char*));
+		AllocCheck(history[0]);
+	}
+
+
+	FILE* file = fopen("l-nshell_cmd.log", "a");
+
+	if (file) {
+		fputs(line, file);
+		fclose(file);
+	}
+	else printf("%s: Can't log input!\n", SHELL_NAME);
+}
+
+void HandleCmd(char** history, int *hbuffsize, int *hindex) {
 	char *line;
 	char** args;
 	int status = 1;
@@ -117,15 +134,28 @@ void HandleCmd(void) {
 			return;
 		}
 
-		args = Tokenise(line);
-		status = Execute(args);
+		LineLog(line, history, hbuffsize, hindex);
+		
+		if (strcmp(line, defCmd[6])) {
+			args = Tokenise(line);
+			status = Execute(args);
+		}
+		else {
+			status = Execute(history);
+		}
 
-		free(line);
+		free(line); //вот из-за этого и не работает хистори
 		free(args);
 	}
 }
 
 int main(int argc, char **argv) {
+	int hbuffsize = CMDHIS_BUFFSIZE;
+	int hindex = 0;
+	char** history = malloc(hbuffsize * sizeof(char*));
+
+	//history[hindex] = "Dafsdfsdf";
+
 	char cwd[PATH_MAX];
 	if (getcwd(cwd, sizeof(cwd)) != nullptr) {
 		printf("Current working directory: %s\n", cwd);
@@ -136,7 +166,8 @@ int main(int argc, char **argv) {
 	
 	signal(SIGHUP, CatchSighup);
 	signal(SIGINT, CatchSigint);
-	HandleCmd();
-
+	HandleCmd(history, &hbuffsize, &hindex);
+	
+	free(history);
 	return 0;
 }

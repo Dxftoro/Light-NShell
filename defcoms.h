@@ -1,7 +1,9 @@
 #define CMD_BUFFSIZE 1024
 #define TOKEN_BUFFSIZE 64
 #define DIRN_BUFFSIZE 128
+#define CMDHIS_BUFFSIZE 512
 #define SHELL_NAME "l-nshell"
+#define CMDHIS_LOG "l-nshell_cmd.log"
 #define true 1
 #define false 0
 #define nullptr NULL
@@ -12,7 +14,8 @@ char* defCmd[] = {
 	"cd",
 	"ls",
 	"echo",
-	"cyctest"
+	"cyctest",
+	"hsr"
 };
 
 int DefNum() {
@@ -57,7 +60,8 @@ int CmdLs(char** args) {
 	if (dirp) {
 		while ((dir = readdir(dirp)) != nullptr) {
 			if (!hideHidden || dir->d_name[0] != '.') {
-				printf("%s\t", dir->d_name);
+				if (dir->d_type == DT_DIR) printf("\033[1;32m%s\033[0m\t", dir->d_name);
+				else printf("%s\t", dir->d_name);
 			}
 		}
 		printf("\n");
@@ -83,18 +87,24 @@ int CmdEcho(char** args) {
 }
 
 int CmdCyctest(char** args) {
-	/*int echo = 0;
-	int ieof = 1;
-	while (ieof) {
-		echo = CmdEcho(args);
-		ieof = feof(stdin);
-		printf("\n");
-	}*/
-
+	int echo = 0;
 	while (1) {
-		printf("%d", feof(stdin));
+		echo = CmdEcho(args);
 	}
 
+	return 1;
+}
+
+int CmdHsr(char** args) {
+	FILE* file = fopen(CMDHIS_LOG, "r");
+	
+	if (file) {
+		char* content;
+		while (fscanf(file, "%s", content) != EOF) {
+			printf("%s\n", content);
+		}
+	}
+	else printf("%s: Can't open \"%s\"", SHELL_NAME, CMDHIS_LOG);
 	return 1;
 }
 
@@ -113,6 +123,7 @@ int (*defFuncs[]) (char**) = {
 	&CmdCd,
 	&CmdLs,
 	&CmdEcho,
-	&CmdCyctest
+	&CmdCyctest,
+	&CmdHsr
 };
 
