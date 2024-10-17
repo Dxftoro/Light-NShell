@@ -3,6 +3,9 @@
 #include "string.h"
 #include "unistd.h"
 #include "sys/wait.h"
+#include "pwd.h"
+#include "sys/types.h"
+#include "sys/stat.h"
 #include "linux/limits.h"
 #include "dirent.h"
 #include "signal.h"
@@ -63,27 +66,6 @@ char** Tokenise(char* line) {
 	return tokens;
 }
 
-int LinkProcess(char** args) {
-	pid_t pid, wpid;
-	int status;
-
-	pid = fork();
-	if (pid < 0) perror(SHELL_NAME);
-	else if (pid == 0) {
-		if (execvp(args[0], args) == -1) {
-			perror(SHELL_NAME);
-			exit(1);
-		}
-	}
-	else {
-		do {
-			wpid = waitpid(pid, &status, WUNTRACED);
-		} while (!WIFEXITED(status) && !WIFSIGNALED(status));
-	}
-
-	return 1;
-}
-
 int Execute(char** args) {
 	if (args[0] == nullptr) return 1;
 
@@ -108,7 +90,7 @@ void LineLog(char* line, char** history, int *hbuffsize, int *hindex) {
 	}
 
 
-	FILE* file = fopen("l-nshell_cmd.log", "a");
+	FILE* file = fopen(getenv(CMDHIS_ENV), "a");
 
 	if (file) {
 		fputs(line, file);
@@ -155,13 +137,20 @@ int main(int argc, char **argv) {
 	char** history = malloc(hbuffsize * sizeof(char*));
 
 	//history[hindex] = "Dafsdfsdf";
+	
+	struct passwd* info = getpwuid(geteuid());
+	//printf("%s\n", info->pw_name);
+	
+	int envpathLen = 8 + strlen(info->pw_name) + strlen(CMDHIS_LOG);
+	char* envpath = malloc(envpathLen * sizeof(char));
+	strcpy(envpath, "/home/");
+	strcat(envpath, info->pw_name);
+	strcat(envpath, "/");
+	strcat(envpath, CMDHIS_LOG);
 
-	char cwd[PATH_MAX];
-	if (getcwd(cwd, sizeof(cwd)) != nullptr) {
-		printf("Current working directory: %s\n", cwd);
-	}
-	else {
+	if (setenv(CMDHIS_ENV, envpath, 0) < 0) {
 		perror(SHELL_NAME);
+		return 1;
 	}
 	
 	signal(SIGHUP, CatchSighup);

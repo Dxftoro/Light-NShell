@@ -3,7 +3,8 @@
 #define DIRN_BUFFSIZE 128
 #define CMDHIS_BUFFSIZE 512
 #define SHELL_NAME "l-nshell"
-#define CMDHIS_LOG "l-nshell_cmd.log"
+#define CMDHIS_LOG "Light-NShell/l-nshell_cmd.log"
+#define CMDHIS_ENV "LNSHELL_CMDHIS"
 #define true 1
 #define false 0
 #define nullptr NULL
@@ -15,11 +16,35 @@ char* defCmd[] = {
 	"ls",
 	"echo",
 	"cyctest",
-	"hsr"
+	"hsr",
+	"\\e",
+	"\\l",
+	"\cron"
 };
 
 int DefNum() {
 	return sizeof(defCmd) / sizeof(char*);
+}
+
+int LinkProcess(char** args) {
+	pid_t pid, wpid;
+	int status;
+
+	pid = fork();
+	if (pid < 0) perror(SHELL_NAME);
+	else if (pid == 0) {
+		if (execvp(args[0], args) == -1) {
+			perror(SHELL_NAME);
+			exit(1);
+		}
+	}
+	else {
+		do {
+			wpid = waitpid(pid, &status, WUNTRACED);
+		} while (!WIFEXITED(status) && !WIFSIGNALED(status));
+	}
+
+	return 1;
 }
 
 int CmdCd(char** args) {
@@ -96,7 +121,7 @@ int CmdCyctest(char** args) {
 }
 
 int CmdHsr(char** args) {
-	FILE* file = fopen(CMDHIS_LOG, "r");
+	FILE* file = fopen(getenv(CMDHIS_ENV), "r");
 	
 	if (file) {
 		char* content;
@@ -104,8 +129,34 @@ int CmdHsr(char** args) {
 			printf("%s\n", content);
 		}
 	}
-	else printf("%s: Can't open \"%s\"", SHELL_NAME, CMDHIS_LOG);
+	else printf("%s: Can't open \"%s\"\n", SHELL_NAME, CMDHIS_LOG);
 	return 1;
+}
+
+int CmdE(char** args) {
+	if (args[1] != nullptr) {
+		char* envPath = getenv(args[1]);
+		if (envPath != nullptr) {
+			printf("%s: %s\n", args[1], getenv(args[1]));
+		}
+		else printf("There is no variable called \"%s\"\n", args[1]);
+	}
+	else printf("Expecting argument \"name\" for \\e\n");
+
+	return 1;
+}
+
+int CmdLblkid(char** args) {
+	if (args[1] != nullptr) {
+		args[0] = "lsblk";
+
+		LinkProcess(args);
+	}
+	else printf("Expecting argument \"path\" for \\l\n");
+}
+
+int CmdCron(char** args) {
+
 }
 
 void CatchSighup() {
@@ -124,6 +175,9 @@ int (*defFuncs[]) (char**) = {
 	&CmdLs,
 	&CmdEcho,
 	&CmdCyctest,
-	&CmdHsr
+	&CmdHsr,
+	&CmdE,
+	&CmdLblkid,
+	&CmdCron
 };
 
