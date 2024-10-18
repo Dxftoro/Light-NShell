@@ -1,13 +1,18 @@
-#define CMD_BUFFSIZE 1024
-#define TOKEN_BUFFSIZE 64
-#define DIRN_BUFFSIZE 128
+#define CMD_BUFFSIZE 	1024
+#define TOKEN_BUFFSIZE 	64
+#define DIRN_BUFFSIZE 	128
 #define CMDHIS_BUFFSIZE 512
-#define SHELL_NAME "l-nshell"
-#define CMDHIS_LOG "Light-NShell/l-nshell_cmd.log"
-#define CMDHIS_ENV "LNSHELL_CMDHIS"
-#define true 1
-#define false 0
-#define nullptr NULL
+
+#define SHELL_NAME 	"l-nshell"
+#define CMDHIS_LOG 	"Light-NShell/l-nshell_cmd.log"
+#define CMDHIS_ENV 	"LNSHELL_CMDHIS"
+#define PROCMEM_PAT 	"/proc/%d/mem"
+#define DUMP_PATH_PAT	"/home/%s/l-nshell_dumps/%s"
+#define DUMP_FILE_PAT	"lnsh_proc%d.dump"
+
+#define true 		1
+#define false 		0
+#define nullptr 	NULL
 
 char* defCmd[] = {
 	"help",
@@ -19,7 +24,8 @@ char* defCmd[] = {
 	"hsr",
 	"\\e",
 	"\\l",
-	"\cron"
+	"\\cron",
+	"\\mem"
 };
 
 int DefNum() {
@@ -74,13 +80,23 @@ int CmdExit(char** args) {
 int CmdLs(char** args) {
 	char cwd[PATH_MAX];
 	
-	DIR* dirp = opendir(getcwd(cwd, sizeof(cwd)));
+	DIR* dirp = nullptr;
 	struct dirent *dir;
 
 	int hideHidden = 1;
-	if (args[1] != nullptr) {
-		hideHidden = strcmp(args[1], "-d");
+	int pathDefined = 0;
+
+	for (int i = 1; args[i] != nullptr; i++) {
+		if (args[i][0] != '-' && !pathDefined) {
+			dirp = opendir(args[i]);
+			pathDefined = 1;
+		}
+		else hideHidden = strcmp(args[i], "-d");
 	}
+
+	if (!pathDefined) {
+		dirp = opendir(getcwd(cwd, sizeof(cwd)));
+ 	}
 
 	if (dirp) {
 		while ((dir = readdir(dirp)) != nullptr) {
@@ -156,7 +172,71 @@ int CmdLblkid(char** args) {
 }
 
 int CmdCron(char** args) {
+	if (mount("/etc/cron.d", "/tmp/vfs", "tmpfs", MS_BIND, nullptr)) {
+		
+	}
+	return 1;
+}
 
+int CmdMem(char** args) {
+	if (args[1] != nullptr) {
+		char* user = getenv("USER");
+		if (user == nullptr) {
+			perror(SHELL_NAME);
+			return 1;
+		}
+
+		int idsize = strlen(args[1]);
+		pid_t procid = atoi(args[1]);
+
+		int procpSize = strlen(PROCMEM_PAT) - 1 + idsize;
+		char* procp = (char*)malloc(procpSize * sizeof(char));
+
+		snprintf(procp, procpSize, PROCMEM_PAT, procid);
+
+		int dumpfSize = strlen(DUMP_FILE_PAT) - 1 + idsize;
+		char* dumpf = (char*)malloc(dumpfSize * sizeof(char));
+
+		snprintf(dumpf, dumpfSize, DUMP_FILE_PAT, procid);
+
+		int dumppSize = strlen(DUMP_PATH_PAT) - 2 + strlen(user) + dumpfSize;
+		char* dumpp = (char*)malloc(dumppSize * sizeof(char));
+
+		snprintf(dumpp, dumppSize, DUMP_PATH_PAT, user, dumpf);
+
+		printf("%d: %s\n", procpSize, procp);
+		printf("%d: %s\n", dumpfSize, dumpf);
+		printf("%d: %s\n", dumppSize, dumpp);
+
+		FILE* memfile = fopen(procp, "r");
+		FILE* dumpfile = fopen(dumpp, "w");
+		if (!memfile) {
+			perror(SHELL_NAME);
+			return 1;
+		}
+		
+
+		
+		char* content;
+		if (!dumpfile) {
+			while (fscanf(memfile, "%s", content) != EOF) {
+				printf("%s", content);
+				fputs(content, dumpfile);
+			}
+		}
+		else {
+			perror(SHELL_NAME);
+			return 1;
+		}
+		
+		fclose(memfile);
+		fclose(dumpfile);
+		free(procp);
+		free(dumpf);
+		free(dumpp);
+	}
+
+	return 1;
 }
 
 void CatchSighup() {
@@ -178,6 +258,7 @@ int (*defFuncs[]) (char**) = {
 	&CmdHsr,
 	&CmdE,
 	&CmdLblkid,
-	&CmdCron
+	&CmdCron,
+	&CmdMem
 };
 

@@ -6,6 +6,7 @@
 #include "pwd.h"
 #include "sys/types.h"
 #include "sys/stat.h"
+#include "sys/mount.h"
 #include "linux/limits.h"
 #include "dirent.h"
 #include "signal.h"
@@ -67,6 +68,13 @@ char** Tokenise(char* line) {
 }
 
 int Execute(char** args) {
+	/*printf("\n");
+	for (int i = 0; args[i] != nullptr; i++) {
+		printf(" |%s| ", args[i]);
+	}
+	printf("\n");
+	*/
+
 	if (args[0] == nullptr) return 1;
 
 	for (int i = 0; i < DefNum(); i++) {
@@ -137,6 +145,7 @@ int main(int argc, char **argv) {
 	char** history = malloc(hbuffsize * sizeof(char*));
 
 	//history[hindex] = "Dafsdfsdf";
+	printf("%d\n", getpid());	
 	
 	struct passwd* info = getpwuid(geteuid());
 	//printf("%s\n", info->pw_name);
@@ -158,5 +167,6 @@ int main(int argc, char **argv) {
 	HandleCmd(history, &hbuffsize, &hindex);
 	
 	free(history);
+	free(envpath);
 	return 0;
 }
