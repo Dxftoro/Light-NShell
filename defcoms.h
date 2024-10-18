@@ -7,8 +7,8 @@
 #define CMDHIS_LOG 	"Light-NShell/l-nshell_cmd.log"
 #define CMDHIS_ENV 	"LNSHELL_CMDHIS"
 #define PROCMEM_PAT 	"/proc/%d/mem"
-#define DUMP_PATH_PAT	"/home/%s/l-nshell_dumps/%s"
-#define DUMP_FILE_PAT	"lnsh_proc%d.dump"
+#define DUMP_PATH_PAT	"/home/%s/l-nshell_dumps/"
+#define DUMP_FILE_PAT	"proc%d.dump"
 
 #define true 		1
 #define false 		0
@@ -202,21 +202,22 @@ int CmdMem(char** args) {
 		int dumppSize = strlen(DUMP_PATH_PAT) - 2 + strlen(user) + dumpfSize;
 		char* dumpp = (char*)malloc(dumppSize * sizeof(char));
 
-		snprintf(dumpp, dumppSize, DUMP_PATH_PAT, user, dumpf);
-
+		snprintf(dumpp, dumppSize, DUMP_PATH_PAT, user);
+		printf("---- %d\n", mkdir(dumpp, 0700));
+		strcat(dumpp, dumpf);
+		
 		printf("%d: %s\n", procpSize, procp);
 		printf("%d: %s\n", dumpfSize, dumpf);
 		printf("%d: %s\n", dumppSize, dumpp);
-
+			
 		FILE* memfile = fopen(procp, "r");
-		FILE* dumpfile = fopen(dumpp, "w");
 		if (!memfile) {
-			perror(SHELL_NAME);
+			perror(procp);
 			return 1;
 		}
 		
 
-		
+		FILE* dumpfile = fopen(dumpp, "w");	
 		char* content;
 		if (!dumpfile) {
 			while (fscanf(memfile, "%s", content) != EOF) {
@@ -225,7 +226,7 @@ int CmdMem(char** args) {
 			}
 		}
 		else {
-			perror(SHELL_NAME);
+			perror(dumpp);
 			return 1;
 		}
 		
