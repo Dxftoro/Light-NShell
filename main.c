@@ -149,13 +149,16 @@ int main(int argc, char **argv) {
 	
 	struct passwd* info = getpwuid(geteuid());
 	//printf("%s\n", info->pw_name);
+
+	int hisnameLen = strlen(CMDHIS_LOG) + 1;
+	int envpathLen = strlen(CMDHIS_PATH) - 1 + strlen(info->pw_name) + hisnameLen;
+
+	char* hisname = (char*)malloc(hisnameLen * sizeof(char));
+	char* envpath = (char*)malloc(envpathLen * sizeof(char));
 	
-	int envpathLen = 8 + strlen(info->pw_name) + strlen(CMDHIS_LOG);
-	char* envpath = malloc(envpathLen * sizeof(char));
-	strcpy(envpath, "/home/");
-	strcat(envpath, info->pw_name);
-	strcat(envpath, "/");
-	strcat(envpath, CMDHIS_LOG);
+	snprintf(envpath, envpathLen, CMDHIS_PATH, info->pw_name);
+	strcpy(hisname, CMDHIS_LOG);
+	strcat(envpath, hisname);
 
 	if (setenv(CMDHIS_ENV, envpath, 0) < 0) {
 		perror(SHELL_NAME);
@@ -167,6 +170,7 @@ int main(int argc, char **argv) {
 	HandleCmd(history, &hbuffsize, &hindex);
 	
 	free(history);
+	free(hisname);
 	free(envpath);
 	return 0;
 }

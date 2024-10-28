@@ -4,8 +4,11 @@
 #define CMDHIS_BUFFSIZE 512
 
 #define SHELL_NAME 	"l-nshell"
-#define CMDHIS_LOG 	"Light-NShell/l-nshell_cmd.log"
+
+#define CMDHIS_PATH 	"/home/%s"
+#define CMDHIS_LOG	"/l-nshell_cmdhis.log"
 #define CMDHIS_ENV 	"LNSHELL_CMDHIS"
+
 #define PROCMEM_PAT 	"/proc/%d/mem"
 #define DUMP_PATH_PAT	"/home/%s/l-nshell_dumps/"
 #define DUMP_FILE_PAT	"proc%d.dump"
@@ -137,7 +140,8 @@ int CmdCyctest(char** args) {
 }
 
 int CmdHsr(char** args) {
-	FILE* file = fopen(getenv(CMDHIS_ENV), "r");
+	char* env = getenv(CMDHIS_ENV);
+	FILE* file = fopen(env, "r");
 	
 	if (file) {
 		char* content;
@@ -145,7 +149,7 @@ int CmdHsr(char** args) {
 			printf("%s\n", content);
 		}
 	}
-	else printf("%s: Can't open \"%s\"\n", SHELL_NAME, CMDHIS_LOG);
+	else printf("%s: Can't open \"%s\"\n", SHELL_NAME, env);
 	return 1;
 }
 
@@ -162,7 +166,7 @@ int CmdE(char** args) {
 	return 1;
 }
 
-int CmdLblkid(char** args) {
+int CmdL(char** args) {
 	if (args[1] != nullptr) {
 		args[0] = "lsblk";
 
@@ -258,7 +262,7 @@ int (*defFuncs[]) (char**) = {
 	&CmdCyctest,
 	&CmdHsr,
 	&CmdE,
-	&CmdLblkid,
+	&CmdL,
 	&CmdCron,
 	&CmdMem
 };
