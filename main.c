@@ -148,15 +148,27 @@ int main(int argc, char **argv) {
 	printf("%d\n", getpid());	
 	
 	struct passwd* info = getpwuid(geteuid());
-	//printf("%s\n", info->pw_name);
+	printf("%d\n", info->pw_uid);
 
 	int hisnameLen = strlen(CMDHIS_LOG) + 1;
-	int envpathLen = strlen(CMDHIS_PATH) - 1 + strlen(info->pw_name) + hisnameLen;
+	
+	int envpathLen;
+	if (info->pw_uid != 0) {
+		envpathLen = strlen(CMDHIS_PATH) - 1 + strlen(info->pw_name) + hisnameLen;
+	}
+	else {
+		envpathLen = strlen(CMDHIS_PATH) - 1 + hisnameLen;
+	}
 
 	char* hisname = (char*)malloc(hisnameLen * sizeof(char));
 	char* envpath = (char*)malloc(envpathLen * sizeof(char));
 	
-	snprintf(envpath, envpathLen, CMDHIS_PATH, info->pw_name);
+	if (info->pw_uid != 0) {
+		snprintf(envpath, envpathLen, CMDHIS_PATH, info->pw_name);
+	}
+	else {
+		snprintf(envpath, envpathLen, CMDHIS_PATH, "");
+	}
 	strcpy(hisname, CMDHIS_LOG);
 	strcat(envpath, hisname);
 

@@ -17,6 +17,8 @@
 #define false 		0
 #define nullptr 	NULL
 
+#include "blstruct.h"
+
 char* defCmd[] = {
 	"help",
 	"exit",
@@ -167,12 +169,25 @@ int CmdE(char** args) {
 }
 
 int CmdL(char** args) {
-	if (args[1] != nullptr) {
-		args[0] = "lsblk";
+	//if (args[1] != nullptr) {
+	//	args[0] = "lsblk";
 
-		LinkProcess(args);
+	//	LinkProcess(args);
+	//}
+	//else printf("Expecting argument \"path\" for \\l\n");
+	
+	FILE* mount = fopen("/dev/sda", "rb");
+	if (!mount) { 
+		printf("Unknown device \"%s\"!\n", "/dev/sda");
+		return 1;
 	}
-	else printf("Expecting argument \"path\" for \\l\n");
+	
+	MBR block;
+	ReadMBR(mount, &block);
+
+	fclose(mount);
+
+	return 1;
 }
 
 int CmdCron(char** args) {
