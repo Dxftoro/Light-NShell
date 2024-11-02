@@ -168,22 +168,25 @@ int CmdE(char** args) {
 	return 1;
 }
 
-int CmdL(char** args) {
-	//if (args[1] != nullptr) {
-	//	args[0] = "lsblk";
+int CmdL(char** args) {	
+	if (args[1] == nullptr) {
+		printf("Expecting argument \"path\" for \\l\n");
+		return 1;
+	}
 
-	//	LinkProcess(args);
-	//}
-	//else printf("Expecting argument \"path\" for \\l\n");
-	
-	FILE* mount = fopen("/dev/sda", "rb");
+	FILE* mount = fopen(args[1], "rb");
 	if (!mount) { 
-		printf("Unknown device \"%s\"!\n", "/dev/sda");
+		printf("Unknown device \"%s\"!\n", args[1]);
 		return 1;
 	}
 	
 	MBR block;
 	ReadMBR(mount, &block);
+	
+	printf("Signature of %s: %d\n", args[1], block.signature);
+	for (int i = 0; i < 4; i++) {
+		printf("%d\n", block.partitionTable[i].sectorCount);
+	}
 
 	fclose(mount);
 
