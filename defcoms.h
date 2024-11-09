@@ -184,9 +184,9 @@ int CmdL(char** args) {
 	ReadMBR(mount, &block);
 	
 	printf("Signature of %s: %d\n", args[1], block.signature);
-	for (int i = 0; i < 4; i++) {
-		printf("%d\n", block.partitionTable[i].sectorCount);
-	}
+	//for (int i = 0; i < 4; i++) {
+	//	printf("%d\n", block.partitionTable[i].id);
+	//}
 
 	fclose(mount);
 

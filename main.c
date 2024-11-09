@@ -139,6 +139,28 @@ void HandleCmd(char** history, int *hbuffsize, int *hindex) {
 	}
 }
 
+void StarterArt(char* filename) {
+	int width = 120, height  = 15;
+
+	FILE* file = fopen(filename, "r");
+
+	if (!file) {
+		perror(SHELL_NAME);
+		return;
+	}
+
+	char sym = fgetc(file);
+	int i = 0;
+	while (sym != EOF && i < width * height) {
+		printf("%c", sym);
+		sym = fgetc(file);
+		i++;
+	}
+
+	printf("\n");
+	fclose(file);
+}
+
 int main(int argc, char **argv) {
 	int hbuffsize = CMDHIS_BUFFSIZE;
 	int hindex = 0;
@@ -179,6 +201,9 @@ int main(int argc, char **argv) {
 	
 	signal(SIGHUP, CatchSighup);
 	signal(SIGINT, CatchSigint);
+
+	StarterArt("result.txt");
+
 	HandleCmd(history, &hbuffsize, &hindex);
 	
 	free(history);
