@@ -9,15 +9,16 @@
 #define CMDHIS_LOG	"/l-nshell_cmdhis.log"
 #define CMDHIS_ENV 	"LNSHELL_CMDHIS"
 
-#define PROCMEM_PAT 	"/proc/%d/mem"
-#define DUMP_PATH_PAT	"/home/%s/l-nshell_dumps/"
-#define DUMP_FILE_PAT	"proc%d.dump"
+#define PROCMEM_PAT 	"/proc/%d/map_files/"
+#define DUMP_PATH_PAT	"/home/%s/l-nshell_dumps/d%d"
+#define DUMP_FILE_PAT	"%s.dump"
 
 #define true 		1
 #define false 		0
 #define nullptr 	NULL
 
 #include "blstruct.h"
+#include "dumper.h"
 
 char* defCmd[] = {
 	"help",
@@ -201,6 +202,45 @@ int CmdCron(char** args) {
 }
 
 int CmdMem(char** args) {
+	if (args[1] == nullptr) {
+		printf("Expecting argument \"pid\" for \\l\n");
+		return 1;
+	}
+
+	char* username = getenv("USER");
+	if (username == nullptr) {
+		perror(SHELL_NAME);
+		return 1;
+	}
+
+	int idsize = strlen(args[1]);
+	pid_t procid = atoi(args[1]);
+
+	int procpSize = strlen(PROCMEM_PAT) - 1 + idsize;
+	char* procp = (char*)malloc(procpSize * sizeof(char));
+
+	snprintf(procp, procpSize, PROCMEM_PAT, procid);
+
+	printf("---> %s\n", procp);
+
+	DIR* dirp = opendir(procp);
+
+	if (dirp == nullptr) {
+		perror(SHELL_NAME);
+		return 1;
+	}
+
+	struct dirent* dir;
+	//while ((dir = readdir(dirp)) != nullptr) {
+		//int filepSize = strlen(
+		//char* filepath = (char*)malloc(filepathSize * sizeof(char));
+	//}
+
+
+	return 1;
+}
+
+/*int CmdMemDNU(char** args) {
 	if (args[1] != nullptr) {
 		char* user = getenv("USER");
 		if (user == nullptr) {
@@ -208,19 +248,23 @@ int CmdMem(char** args) {
 			return 1;
 		}
 
+		//gettind pid
 		int idsize = strlen(args[1]);
 		pid_t procid = atoi(args[1]);
 
+		//printing to proccess path patt
 		int procpSize = strlen(PROCMEM_PAT) - 1 + idsize;
 		char* procp = (char*)malloc(procpSize * sizeof(char));
 
 		snprintf(procp, procpSize, PROCMEM_PAT, procid);
 
+		//printing to dump file name patt
 		int dumpfSize = strlen(DUMP_FILE_PAT) - 1 + idsize;
 		char* dumpf = (char*)malloc(dumpfSize * sizeof(char));
 
 		snprintf(dumpf, dumpfSize, DUMP_FILE_PAT, procid);
 
+		//printing to dump file path patt
 		int dumppSize = strlen(DUMP_PATH_PAT) - 2 + strlen(user) + dumpfSize;
 		char* dumpp = (char*)malloc(dumppSize * sizeof(char));
 
@@ -231,15 +275,18 @@ int CmdMem(char** args) {
 		printf("%d: %s\n", procpSize, procp);
 		printf("%d: %s\n", dumpfSize, dumpf);
 		printf("%d: %s\n", dumppSize, dumpp);
-			
+		
+		//getting map_files
+		
 		FILE* memfile = fopen(procp, "r");
 		if (!memfile) {
 			perror(procp);
 			return 1;
 		}
+
 		
 
-		FILE* dumpfile = fopen(dumpp, "w");	
+		/*FILE* dumpfile = fopen(dumpp, "w");	
 		char* content;
 		if (!dumpfile) {
 			while (fscanf(memfile, "%s", content) != EOF) {
@@ -253,14 +300,14 @@ int CmdMem(char** args) {
 		}
 		
 		fclose(memfile);
-		fclose(dumpfile);
-		free(procp);
-		free(dumpf);
-		free(dumpp);
-	}
+		fclose(dumpfile);*/
+		//free(procp);
+		//free(dumpf);
+		//free(dumpp);
+	//}
 
-	return 1;
-}
+	//return 1;
+//}
 
 void CatchSighup() {
 	printf("Configuration reloaded!");
