@@ -10,7 +10,7 @@
 #define CMDHIS_ENV 	"LNSHELL_CMDHIS"
 
 #define PROCMEM_PAT 	"/proc/%d/map_files/"
-#define DUMP_PATH_PAT	"/home/%s/l-nshell_dumps/d%d"
+#define DUMP_PATH_PAT	"/var/l-nshell_dumps/d%d/"
 #define DUMP_FILE_PAT	"%s.dump"
 
 #define true 		1
@@ -57,6 +57,17 @@ int LinkProcess(char** args) {
 	}
 
 	return 1;
+}
+
+void Rmkdir(char* filepath) {
+	size_t fpSize = strlen(filepath);
+	char* path = (char*)malloc(fpSize * sizeof(char));
+	
+	for (int i = 0; i < fpSize; i++) {
+		path[i] = filepath[i];
+
+		if (path[i] == '/' || path[i] == '\0' || i == fpSize - 1) mkdir(path, 0755);
+	}
 }
 
 int CmdCd(char** args) {
@@ -213,15 +224,14 @@ int CmdMem(char** args) {
 		return 1;
 	}
 
-	int idsize = strlen(args[1]);
 	pid_t procid = atoi(args[1]);
 
-	int procpSize = strlen(PROCMEM_PAT) - 1 + idsize;
-	char* procp = (char*)malloc(procpSize * sizeof(char));
+	char* procp, *dumpp;
+	asprintf(&procp, PROCMEM_PAT, procid);
+	asprintf(&dumpp, DUMP_PATH_PAT, procid);
 
-	snprintf(procp, procpSize, PROCMEM_PAT, procid);
-
-	printf("---> %s\n", procp);
+	printf("Reading from %s\n", procp);
+	Rmkdir(dumpp);
 
 	DIR* dirp = opendir(procp);
 
@@ -231,83 +241,31 @@ int CmdMem(char** args) {
 	}
 
 	struct dirent* dir;
-	//while ((dir = readdir(dirp)) != nullptr) {
-		//int filepSize = strlen(
-		//char* filepath = (char*)malloc(filepathSize * sizeof(char));
-	//}
+	while ((dir = readdir(dirp)) != nullptr) {
+		if (dir->d_type != DT_DIR) {
+			char *dumpf;
+			asprintf(&dumpf, DUMP_FILE_PAT, dir->d_name);
+			
+			char *procPart = (char*)malloc((strlen(procp) + strlen(dir->d_name) + 1) * sizeof(char));
+			strcpy(procPart, procp);
+			strcat(procPart, dir->d_name);
 
+			char *dumpfFull = (char*)malloc((strlen(dumpp) + strlen(dumpf) + 1) * sizeof(char));	
+			strcpy(dumpfFull, dumpp);
+			strcat(dumpfFull, dumpf);
 
+			DumpPart(procPart, dumpfFull);
+
+			free(dumpf);
+			free(procPart);
+			free(dumpfFull);
+		}
+	}
+	
+	printf("Dumped process %d to %s\n", procid, dumpp);
+	free(procp); free(dumpp);
 	return 1;
 }
-
-/*int CmdMemDNU(char** args) {
-	if (args[1] != nullptr) {
-		char* user = getenv("USER");
-		if (user == nullptr) {
-			perror(SHELL_NAME);
-			return 1;
-		}
-
-		//gettind pid
-		int idsize = strlen(args[1]);
-		pid_t procid = atoi(args[1]);
-
-		//printing to proccess path patt
-		int procpSize = strlen(PROCMEM_PAT) - 1 + idsize;
-		char* procp = (char*)malloc(procpSize * sizeof(char));
-
-		snprintf(procp, procpSize, PROCMEM_PAT, procid);
-
-		//printing to dump file name patt
-		int dumpfSize = strlen(DUMP_FILE_PAT) - 1 + idsize;
-		char* dumpf = (char*)malloc(dumpfSize * sizeof(char));
-
-		snprintf(dumpf, dumpfSize, DUMP_FILE_PAT, procid);
-
-		//printing to dump file path patt
-		int dumppSize = strlen(DUMP_PATH_PAT) - 2 + strlen(user) + dumpfSize;
-		char* dumpp = (char*)malloc(dumppSize * sizeof(char));
-
-		snprintf(dumpp, dumppSize, DUMP_PATH_PAT, user);
-		printf("---- %d\n", mkdir(dumpp, 0700));
-		strcat(dumpp, dumpf);
-		
-		printf("%d: %s\n", procpSize, procp);
-		printf("%d: %s\n", dumpfSize, dumpf);
-		printf("%d: %s\n", dumppSize, dumpp);
-		
-		//getting map_files
-		
-		FILE* memfile = fopen(procp, "r");
-		if (!memfile) {
-			perror(procp);
-			return 1;
-		}
-
-		
-
-		/*FILE* dumpfile = fopen(dumpp, "w");	
-		char* content;
-		if (!dumpfile) {
-			while (fscanf(memfile, "%s", content) != EOF) {
-				printf("%s", content);
-				fputs(content, dumpfile);
-			}
-		}
-		else {
-			perror(dumpp);
-			return 1;
-		}
-		
-		fclose(memfile);
-		fclose(dumpfile);*/
-		//free(procp);
-		//free(dumpf);
-		//free(dumpp);
-	//}
-
-	//return 1;
-//}
 
 void CatchSighup() {
 	printf("Configuration reloaded!");
