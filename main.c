@@ -1,16 +1,29 @@
+//headers of the C standart
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
-#include "unistd.h"
+
+//"sys" module headers
 #include "sys/wait.h"
-#include "pwd.h"
 #include "sys/types.h"
 #include "sys/stat.h"
 #include "sys/mount.h"
+
+//"linux" module headers
 #include "linux/limits.h"
+#include "linux/fs.h"
+#include "linux/kernel.h"
+//#include "linux/init.h"
+#include "linux/module.h"
+//#include "linux/pagemap.h"
+
+//other unix-system feature modules
+#include "unistd.h"
+#include "pwd.h"
 #include "dirent.h"
 #include "signal.h"
 
+//"defcoms" is a header file that includes all built-in shell commands
 #include "defcoms.h"
 
 enum ERR {
@@ -24,13 +37,6 @@ void AllocCheck(char* buffer) {
 		exit(1);
 	}
 }
-
-/*void CheckDir(char* dirname) {
-	if (getcwd(dirname, sizeof(dirname)) == nullptr) {
-		perror(SHELL_NAME);
-		dirname = "?";
-	}
-}*/
 
 char* ReadLine(void) {
 	char* line = nullptr;
@@ -78,8 +84,8 @@ int Execute(char** args) {
 	if (args[0] == nullptr) return 1;
 
 	for (int i = 0; i < DefNum(); i++) {
-		if (strcmp(args[0], defCmd[i]) == 0) {
-			return (*defFuncs[i])(args);
+		if (strcmp(args[0], cmdList[i].cmdName) == 0) {
+			return (*cmdList[i].cmdFunc)(args);
 		}
 	}
 
@@ -126,7 +132,7 @@ void HandleCmd(char** history, int *hbuffsize, int *hindex) {
 
 		LineLog(line, history, hbuffsize, hindex);
 		
-		if (strcmp(line, defCmd[6])) {
+		if (strcmp(line, cmdList[6].cmdName)) {
 			args = Tokenise(line);
 			status = Execute(args);
 		}
@@ -167,10 +173,10 @@ int main(int argc, char **argv) {
 	char** history = malloc(hbuffsize * sizeof(char*));
 
 	//history[hindex] = "Dafsdfsdf";
-	printf("%d\n", getpid());	
+	printf("%s process id: \033[1;36m%d\033[0m\n", SHELL_NAME, getpid());	
 	
 	struct passwd* info = getpwuid(geteuid());
-	printf("%d\n", info->pw_uid);
+	printf("User id: %d\n", info->pw_uid);
 
 	int hisnameLen = strlen(CMDHIS_LOG) + 1;
 	

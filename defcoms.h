@@ -18,25 +18,8 @@
 #define nullptr 	NULL
 
 #include "blstruct.h"
+//#include "lnshellfs.h"
 #include "dumper.h"
-
-char* defCmd[] = {
-	"help",
-	"exit",
-	"cd",
-	"ls",
-	"echo",
-	"cyctest",
-	"hsr",
-	"\\e",
-	"\\l",
-	"\\cron",
-	"\\mem"
-};
-
-int DefNum() {
-	return sizeof(defCmd) / sizeof(char*);
-}
 
 int LinkProcess(char** args) {
 	pid_t pid, wpid;
@@ -78,14 +61,6 @@ int CmdCd(char** args) {
 	else {
 		fprintf(stderr, "Expecting argument \"path\" for cd\n");
 	}
-
-	return 1;
-}
-
-int CmdHelp(char** args) {
-	printf("List of default commands:\n");
-
-	for (int i = 0; i < DefNum(); i++) printf("%s\n" ,defCmd[i]);
 
 	return 1;
 }
@@ -206,9 +181,8 @@ int CmdL(char** args) {
 }
 
 int CmdCron(char** args) {
-	if (mount("/etc/cron.d", "/tmp/vfs", "tmpfs", MS_BIND, nullptr)) {
-		
-	}
+	
+
 	return 1;
 }
 
@@ -276,8 +250,35 @@ void CatchSigint() {
 	exit(1);
 }
 
+/*char* defCmd[] = {
+	"help",
+	"exit",
+	"\\q",
+	"cd",
+	"ls",
+	"echo",
+	"cyctest",
+	"hsr",
+	"\\e",
+	"\\l",
+	"\\cron",
+	"\\mem"
+};*/
+
+typedef struct {
+	char* cmdName;
+	char* cmdDescr;
+	int (*cmdFunc) (char**);
+} DefCmd;
+
+/*int DefNum() {
+	return sizeof(defCmd) / sizeof(char*);
+}
+
+int CmdHelp(char** args);
 int (*defFuncs[]) (char**) = {
 	&CmdHelp,
+	&CmdExit,
 	&CmdExit,
 	&CmdCd,
 	&CmdLs,
@@ -288,5 +289,31 @@ int (*defFuncs[]) (char**) = {
 	&CmdL,
 	&CmdCron,
 	&CmdMem
+};*/
+
+int CmdHelp(char** args);
+
+DefCmd cmdList[] = {
+	{ "help", "print this list", &CmdHelp },
+	{ "exit", "terminate l-nshell", &CmdExit },
+	{ "\\q", "do the same as \"exit\" command", &CmdExit },
+	{ "cd", "[path] change working directory", &CmdCd },
+	{ "ls", "[path] list all files in the specified folder", &CmdLs },
+	{ "echo", "[text] prints specified text", &CmdEcho },
+	{ "cyctest", "[text or nothig] run a test of terminating signal (when it runs just press Ctrl+C to terminate l-nshell)", &CmdCyctest },
+	{ "hsr", "view command history", &CmdHsr },
+	{ "\\e", "[envname] print a value of specified environment variable", &CmdE },
+	{ "\\l", "[path to block device] print signature of specified block device", &CmdL },
+	{ "\\cron", "no functionality", &CmdCron },
+	{ "\\mem", "[process id] dump process memory with specified id", &CmdMem }
 };
 
+int DefNum() {
+	return sizeof(cmdList) / sizeof(DefCmd);
+}
+
+int CmdHelp(char** args) {
+	printf("List of default commands:\n");
+	for (int i = 0; i < DefNum(); i++) printf("%s\t- %s;\n", cmdList[i].cmdName, cmdList[i].cmdDescr);
+	return 1;
+}
