@@ -50,15 +50,12 @@ void Rmkdir(char* filepath) {
 	
 	path[fpSize] = '\0';
 
-	printf("%ld\n", strlen(path));
-
 	for (int i = 0; i < fpSize; i++) {
 		path[i] = filepath[i];
 
 		if (path[i] == '/' || path[i] == '\0' || i == fpSize - 1) mkdir(path, 0755);
 	}
 
-	printf("Strlen orig: %ld, strlen path: %ld, %s\n", fpSize, strlen(path), path);
 	free(path);
 }
 
