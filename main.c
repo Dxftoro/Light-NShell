@@ -151,7 +151,7 @@ void StarterArt(char* filename) {
 	FILE* file = fopen(filename, "r");
 
 	if (!file) {
-		perror(SHELL_NAME);
+		printf("\nSad, but there is no art file loaded :(\nWelcome by the way!\n\n");
 		return;
 	}
 
@@ -172,7 +172,6 @@ int main(int argc, char **argv) {
 	int hindex = 0;
 	char** history = malloc(hbuffsize * sizeof(char*));
 
-	//history[hindex] = "Dafsdfsdf";
 	printf("%s process id: \033[1;36m%d\033[0m\n", SHELL_NAME, getpid());	
 	
 	struct passwd* info = getpwuid(geteuid());
@@ -212,6 +211,8 @@ int main(int argc, char **argv) {
 
 	HandleCmd(history, &hbuffsize, &hindex);
 	
+	umount(CRONFS_TARGET);
+
 	free(history);
 	free(hisname);
 	free(envpath);

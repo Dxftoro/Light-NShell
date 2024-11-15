@@ -13,12 +13,14 @@
 #define DUMP_PATH_PAT	"/var/l-nshell_dumps/d%d/"
 #define DUMP_FILE_PAT	"%s.dump"
 
+#define CRONFS_TARGET	"/tmp/vfs"
+
 #define true 		1
 #define false 		0
 #define nullptr 	NULL
 
 #include "blstruct.h"
-//#include "lnshellfs.h"
+#include "cronfs.h"
 #include "dumper.h"
 
 int LinkProcess(char** args) {
@@ -44,13 +46,20 @@ int LinkProcess(char** args) {
 
 void Rmkdir(char* filepath) {
 	size_t fpSize = strlen(filepath);
-	char* path = (char*)malloc(fpSize * sizeof(char));
+	char* path = (char*)malloc((fpSize + 1) * sizeof(char));
 	
+	path[fpSize] = '\0';
+
+	printf("%ld\n", strlen(path));
+
 	for (int i = 0; i < fpSize; i++) {
 		path[i] = filepath[i];
 
 		if (path[i] == '/' || path[i] == '\0' || i == fpSize - 1) mkdir(path, 0755);
 	}
+
+	printf("Strlen orig: %ld, strlen path: %ld, %s\n", fpSize, strlen(path), path);
+	free(path);
 }
 
 int CmdCd(char** args) {
@@ -121,7 +130,7 @@ int CmdEcho(char** args) {
 
 int CmdCyctest(char** args) {
 	int echo = 0;
-	while (1) {
+	while (true) {
 		echo = CmdEcho(args);
 	}
 
@@ -132,13 +141,17 @@ int CmdHsr(char** args) {
 	char* env = getenv(CMDHIS_ENV);
 	FILE* file = fopen(env, "r");
 	
-	if (file) {
-		char* content;
-		while (fscanf(file, "%s", content) != EOF) {
-			printf("%s\n", content);
-		}
+	if (!file) {
+		printf("%s: Can't open \"%s\"\n", SHELL_NAME, env);
+		return 1;
 	}
-	else printf("%s: Can't open \"%s\"\n", SHELL_NAME, env);
+
+	char content[256];
+	while (fgets(content, 256, file) != nullptr) {
+		printf("%s", content);
+	}
+	printf("\n");
+	
 	return 1;
 }
 
@@ -171,9 +184,6 @@ int CmdL(char** args) {
 	ReadMBR(mount, &block);
 	
 	printf("Signature of %s: %d\n", args[1], block.signature);
-	//for (int i = 0; i < 4; i++) {
-	//	printf("%d\n", block.partitionTable[i].id);
-	//}
 
 	fclose(mount);
 
@@ -181,7 +191,18 @@ int CmdL(char** args) {
 }
 
 int CmdCron(char** args) {
-	
+	char source[] = "/var/spool/cron/crontabs/";
+	char target[] = CRONFS_TARGET;
+	unsigned long flags = MS_BIND;
+
+	Rmkdir(target);
+
+	if (mount(source, target, "tmpfs", flags, "mode=0755") == -1) {
+		perror(SHELL_NAME);
+		return 1;
+	}
+
+	printf("%s successfuly mounted to %s!\n", source, target);
 
 	return 1;
 }
