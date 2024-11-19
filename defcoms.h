@@ -268,46 +268,11 @@ void CatchSigint() {
 	exit(1);
 }
 
-/*char* defCmd[] = {
-	"help",
-	"exit",
-	"\\q",
-	"cd",
-	"ls",
-	"echo",
-	"cyctest",
-	"hsr",
-	"\\e",
-	"\\l",
-	"\\cron",
-	"\\mem"
-};*/
-
 typedef struct {
 	char* cmdName;
 	char* cmdDescr;
 	int (*cmdFunc) (char**);
 } DefCmd;
-
-/*int DefNum() {
-	return sizeof(defCmd) / sizeof(char*);
-}
-
-int CmdHelp(char** args);
-int (*defFuncs[]) (char**) = {
-	&CmdHelp,
-	&CmdExit,
-	&CmdExit,
-	&CmdCd,
-	&CmdLs,
-	&CmdEcho,
-	&CmdCyctest,
-	&CmdHsr,
-	&CmdE,
-	&CmdL,
-	&CmdCron,
-	&CmdMem
-};*/
 
 int CmdHelp(char** args);
 
