@@ -20,7 +20,6 @@
 #define nullptr 	NULL
 
 #include "blstruct.h"
-#include "cronfs.h"
 #include "dumper.h"
 
 int LinkProcess(char** args) {
